@@ -1,15 +1,18 @@
-from scrapy import Request
 import copy
+
+from scrapy import Request
 
 
 class PyppeteerRequest(Request):
     """
     Scrapy ``Request`` subclass providing additional arguments
     """
-    
+
     def __init__(self, url, callback=None, wait_until=None, wait_for=None, script=None, proxy=None,
-                 sleep=None, timeout=None, ignore_resource_types=None, pretend=None, screenshot=None, meta=None, *args,
-                 **kwargs):
+                 sleep=None, timeout=None, ignore_resource_types=None, pretend=None, screenshot=None, meta=None,
+                 pre_page_hooks=None, post_page_hooks=None,
+                 request_interceptor_hooks=None, response_interceptor_hooks=None,
+                 *args, **kwargs):
         """
         :param url: request url
         :param callback: callback
@@ -31,7 +34,7 @@ class PyppeteerRequest(Request):
         # use meta info to save args
         meta = copy.deepcopy(meta) or {}
         pyppeteer_meta = meta.get('pyppeteer') or {}
-        
+
         self.wait_until = pyppeteer_meta.get('wait_until') if pyppeteer_meta.get(
             'wait_until') is not None else (wait_until or 'domcontentloaded')
         self.wait_for = pyppeteer_meta.get('wait_for') if pyppeteer_meta.get('wait_for') is not None else wait_for
@@ -44,7 +47,13 @@ class PyppeteerRequest(Request):
             'ignore_resource_types') is not None else ignore_resource_types
         self.screenshot = pyppeteer_meta.get('screenshot') if pyppeteer_meta.get(
             'screenshot') is not None else screenshot
-        
+        self.post_page_hooks = pyppeteer_meta.get('post_page_hooks') if pyppeteer_meta.get(
+            'post_page_hooks') is not None else post_page_hooks
+        self.pre_page_hooks = pyppeteer_meta.get('pre_page_hooks') if pyppeteer_meta.get(
+            'pre_page_hooks') is not None else pre_page_hooks
+        self.request_interceptor_hooks = pyppeteer_meta.get("request_interceptor_hooks") or request_interceptor_hooks
+        self.response_interceptor_hooks = pyppeteer_meta.get("response_interceptor_hooks") or response_interceptor_hooks
+
         pyppeteer_meta = meta.setdefault('pyppeteer', {})
         pyppeteer_meta['wait_until'] = self.wait_until
         pyppeteer_meta['wait_for'] = self.wait_for
@@ -55,5 +64,9 @@ class PyppeteerRequest(Request):
         pyppeteer_meta['timeout'] = self.timeout
         pyppeteer_meta['screenshot'] = self.screenshot
         pyppeteer_meta['ignore_resource_types'] = self.ignore_resource_types
-        
+        pyppeteer_meta['post_page_hooks'] = self.post_page_hooks
+        pyppeteer_meta['pre_page_hooks'] = self.pre_page_hooks
+        pyppeteer_meta['request_interceptor_hooks'] = self.request_interceptor_hooks
+        pyppeteer_meta['response_interceptor_hooks'] = self.response_interceptor_hooks
+
         super().__init__(url, callback, meta=meta, *args, **kwargs)
